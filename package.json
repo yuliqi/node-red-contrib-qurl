@@ -1,0 +1,42 @@
+{
+  "name": "@yuliqi/node-red-contrib-qurl",
+  "version": "0.0.4",
+  "author": "qiqi <qiqi@qiqid.com>",
+  "homepage": "https://github.com/yuliqi",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yuliqi/node-red-contrib-qurl.git"
+  },
+  "description": "An advanced HTTP request node for Node-RED.",
+  "scripts": {
+    "test": "mocha test/axios_spec.js --timeout=5000",
+    "test-env-localhost": "AXIOS_BASE_URL=http://localhost:80 mocha test/axios_spec.js --timeout=3000"
+  },
+  "keywords": [
+    "node-red",
+    "qurl",
+    "http",
+    "request",
+    "axios"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.9.0"
+  },
+  "node-red": {
+    "version": ">=2.0.0",
+    "nodes": {
+      "qurl": "qurl/qurl.js",
+      "qurl-config": "qurl-config/qurl-config.js"
+    }
+  },
+  "devDependencies": {
+    "mocha": "^11.5.0",
+    "node-red": "^4.0.9",
+    "node-red-node-test-helper": "^0.3.4",
+    "should": "^13.2.3"
+  }
+}

@@ -1,0 +1,291 @@
+<script type="text/javascript">
+RED.nodes.registerType("qurl", {
+    category: "network-input",
+    defaults: {
+        name: { value: "" },
+        endpoint: { type: "qurl-config", required: true },
+        method: { value: "get", required: true },
+        url: { value: "" },
+        responseType: { value: "json" },
+        keepAlive: { value: false },
+        timeout: { value: 30000, required: true },
+        validateStatus: { value: true },
+        verboseOut: { value: false },
+        useQurl: { value: false },
+        headers: { value: [] },
+        params: { value: [] }
+    },
+    inputs: 1,
+    outputs: 1,
+    color: "#cbbbf7",
+    icon: "icons/node-red/white-globe.svg",
+    paletteLabel: "qurl",
+    oneditprepare: function() {
+        const node = this;
+        ['params', 'headers'].forEach(property => {
+            const plist = node[property] || [];
+            const list = $(`#node-input-${property}-container`)
+            .editableList({
+                addItem: function (container, i, prop) {
+                    const row = $('<div/>').css({
+                        overflow: 'hidden',
+                        whiteSpace: 'nowrap',
+                        display: 'flex'
+                    }).appendTo(container);
+
+                    const propertyKeyCell = $('<div/>').css({ 'flex-grow': 1 }).appendTo(row);
+                    const propertyKeyValue = $('<input/>', {
+                        class: `node-input-${property}-name`,
+                        type: "text",
+                        style: "width: 100%",
+                        placeholder: "键"
+                        })
+                        .appendTo(propertyKeyCell)
+                        .typedInput({ types: ["str", "msg", "flow", "global"] });
+                    propertyKeyValue.typedInput('type', prop.keyType || 'str');
+                    propertyKeyValue.typedInput('value', prop.keyValue || '');
+
+                    const propertyValueCell = $('<div/>').css({ 'flex-grow': 1, 'margin-left': '10px' }).appendTo(row);
+                    const propertyValue = $('<input/>', {
+                        class: `node-input-${property}-value`,
+                        type: "text",
+                        style: "width: 100%",
+                        placeholder: "值"
+                        })
+                        .appendTo(propertyValueCell)
+                        .typedInput({ types: ["str", "msg", "flow", "global"] });
+                    propertyValue.typedInput('type', prop.valueType || 'str');
+                    propertyValue.typedInput('value', prop.valueValue || '');
+                },
+                sortable: true,
+                removable: true
+            });
+            plist.forEach(prop => {
+                list.editableList('addItem', prop);
+            });
+        });
+    },
+    oneditsave: function() {
+        ['params', 'headers'].forEach(property => {
+            const list = $(`#node-input-${property}-container`).editableList('items');
+            const node = this;
+            node[property] = [];
+            list.each(function(i) {
+                const prop = $(this);
+                const keyType = prop.find(`.node-input-${property}-name`).typedInput('type');
+                const keyValue = prop.find(`.node-input-${property}-name`).typedInput('value');
+                const valueType = prop.find(`.node-input-${property}-value`).typedInput('type');
+                const valueValue = prop.find(`.node-input-${property}-value`).typedInput('value');
+                node[property].push({ keyType, keyValue, valueType, valueValue });
+            });
+        });
+    },
+    oneditresize: function(size) {
+        const dlg = $("#dialog-form");
+        ['params', 'headers'].forEach(property => {
+            const expandRow = dlg.find(`.node-input-${property}-container-row`);
+            let height = dlg.height() - 5;
+            if(expandRow && expandRow.length){
+                const siblingRows = dlg.find(`> .form-row:not(.node-input-${property}-container-row)`);
+                for (let i = 0; i < siblingRows.size(); i++) {
+                    const cr = $(siblingRows[i]);
+                    if(cr.is(":visible"))
+                        height -= cr.outerHeight(true);
+                }
+                $(`#node-input-${property}-container`).editableList('height',height);
+            }
+        });
+    },
+    label: function () {
+        return `[${this.method.toUpperCase()}] ${this.name || this.url || "请求"}`;
+    },
+});
+</script>
+
+<script type="text/html" data-template-name="qurl">
+<div class="form-row">
+    <label for="node-input-endpoint"><i class="fa fa-server"></i> 接口配置</label>
+    <input type="text" id="node-input-endpoint" />
+</div>
+<div class="form-row">
+    <label for="node-input-method"><i class="fa fa-envelope-o"></i> 请求方法</label>
+    <select id="node-input-method">
+        <option value="get">GET</option>
+        <option value="post">POST</option>
+        <option value="put">PUT</option>
+        <option value="delete">DELETE</option>
+        <option value="patch">PATCH</option>
+        <option value="HEAD">HEAD</option>
+        <option value="use">- 用 msg.method 设定 -</option>
+    </select>
+</div>
+<div class="form-row">
+    <label for="node-input-url"><i class="fa fa-terminal"></i> URL</label>
+    <input type="text" id="node-input-url" placeholder="/资源路径" />
+</div>
+<div class="form-row" style="margin-bottom:0;">
+    <label><i class="fa fa-list"></i> URL 参数</label>
+</div>
+<div class="form-row node-input-params-container-row">
+    <ol id="node-input-params-container"></ol>
+</div>
+<div class="form-row" style="margin-bottom:0;">
+    <label><i class="fa fa-list"></i> 头</label>
+</div>
+<div class="form-row node-input-headers-container-row">
+    <ol id="node-input-headers-container"></ol>
+</div>
+<div class="form-row">
+    <label for="node-input-responseType"><i class="fa fa-sign-out"></i> 返回</label>
+    <select id="node-input-responseType">
+        <option value="json">JSON</option>
+        <option value="text">文本</option>
+        <option value="arraybuffer">Array Buffer</option>
+    </select>
+</div>
+<div class="form-row">
+    <input type="checkbox" id="node-input-keepAlive" style="display: inline-block; width: auto; vertical-align: top;" />
+    <label for="node-input-keepAlive" style="width: auto;">对连接启用keep-alive</label>
+</div>
+<div class="form-row">
+    <label for="node-input-timeout"><i class="fa fa-clock-o"></i> 超时时间</label>
+    <input type="number" id="node-input-timeout" />
+    <span>毫秒</span>
+</div>
+<div class="form-row">
+    <input type="checkbox" id="node-input-validateStatus" style="display: inline-block; width: auto; vertical-align: top;" />
+    <label for="node-input-validateStatus" style="width: auto;">仅向 Catch 节点发送非 2xx 响应</label>
+</div>
+<div class="form-row">
+    <input type="checkbox" id="node-input-verboseOut" style="display: inline-block; width: auto; vertical-align: top;" />
+    <label for="node-input-verboseOut" style="width: auto;">详细输出</label>
+</div>
+<div class="form-row">
+    <input type="checkbox" id="node-input-useQurl" style="display: inline-block; width: auto; vertical-align: top;" />
+    <label for="node-input-useQurl" style="width: auto;">通过 msg.qurl 执行（启用后节点仅注入异步请求函数）</label>
+</div>
+<div class="form-row">
+    <label for="node-input-name"><i class="fa fa-tag"></i> 节点名称</label>
+    <input type="text" id="node-input-name" />
+</div>
+</script>
+
+<script type="text/markdown" data-help-name="qurl">
+### 概述
+
+**qurl 节点** 用于发起 HTTP/HTTPS 请求，支持配置请求方法、路径、超时、认证、代理、以及响应处理方式。  
+可在两种模式下运行：
+
+1. **直接请求模式（默认）**：节点在执行时立即发起网络请求。  
+2. **msg.qurl 模式**：仅注入异步请求函数，不主动发起请求，由 Function 节点自由调用。
+
+---
+
+### 节点属性
+
+| 属性 | 说明 |
+|------|------|
+| **名称 (name)** | 节点名称，非必填。 |
+| **端点配置 (endpoint)** | 引用 `qurl-config` 配置节点，包含基础 URL、代理、证书等。 |
+| **请求方法 (method)** | GET / POST / PUT / DELETE / PATCH 等。 |
+| **请求路径 (url)** | 请求路径，可为相对或绝对路径。 |
+| **响应类型 (responseType)** | 支持 `json`、`text`、`arraybuffer`、`stream`。 |
+| **保持连接 (keepAlive)** | 启用后 HTTP 连接复用，减少握手开销。 |
+| **超时 (timeout)** | 请求超时时间（毫秒）。 |
+| **请求头 (headers)** | 自定义请求头（JSON 格式或 msg.headers）。 |
+| **详细输出 (fullResponse)** | 启用后输出完整响应（包含 status、headers、data）。 |
+| **通过 msg.qurl 执行 (useQurl)** | 启用后节点不直接请求，而是注入异步函数 `msg.qurl()` 供后续节点调用。 |
+
+---
+
+### 消息属性
+
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| `msg.payload` | 任意 | 请求体数据，仅适用于 POST/PUT/PATCH/DELETE。 |
+| `msg.params` | Object | URL 查询参数。 |
+| `msg.headers` | Object | 额外请求头，会与节点配置合并。 |
+| `msg.url` | String | 若设置，则覆盖节点配置中的 URL。 |
+| `msg.method` | String | 若设置，则覆盖节点配置中的请求方法。 |
+| `msg.responseType` | String | 若设置，则覆盖节点配置。 |
+
+---
+
+### 输出消息
+
+**成功输出 (第1输出端)**：
+```js
+msg = {
+    status: 200,
+    headers: { ... },
+    payload: {...}  // 若 fullResponse=false，则仅输出 data
+}
+````
+
+**错误输出 (第2输出端)**：
+
+```js
+msg = {
+    error: err,     // AxiosError 对象
+    status: err.response?.status,
+    payload: err.response?.data
+}
+```
+
+---
+
+### 通过 msg.qurl 执行模式（启用 “通过 msg.qurl 执行”）
+
+当勾选该选项后，节点 **不会立即发起请求**，
+而是将一个异步方法 `msg.qurl` 注入到消息对象中。
+
+你可以在 Function 节点中使用 `await qurl({...})` 调用它来灵活地执行请求。
+该方法的参数与 [Axios 请求配置](https://axios-http.com/docs/req_config) 完全兼容。
+
+#### 示例：
+
+```js
+const { qurl } = msg;
+
+try {
+    const res = await qurl({
+        method: "post",
+        url: "/users",
+        data: { name: "Alice" },
+        params: { debug: true },
+        headers: { "X-Auth": "token" }
+    });
+
+    msg.payload = res.data;
+    return [msg, null]; // 正常输出
+} catch (err) {
+    msg.error = err;
+    return [null, msg]; // 错误输出
+}
+```
+
+> 💡 该模式常用于事务控制、异步流程、数据库操作后再调用 API 的场景。
+> 当 Function 节点中未调用 `qurl()` 时，请求不会执行。
+
+---
+
+### 节点状态
+
+| 状态         | 说明                       |
+| ---------- | ------------------------ |
+| 🟢 ready   | 节点已初始化。                  |
+| 🟡 sending | 正在发送请求。                  |
+| 🟠 waiting | 等待异步调用（启用 msg.qurl 模式时）。 |
+| 🔴 error   | 请求失败或配置错误。               |
+
+---
+
+### 注意事项
+
+* 若配置节点中设置了认证信息（Basic/Auth/Token），将自动附加到请求头。
+* `timeout` 建议设置在 30 秒以内，以避免流程阻塞。
+* 响应类型为 `stream` 时，返回 `Readable` 对象，可用于文件写入或转发。
+* `msg.qurl` 支持并发调用，互不干扰。
+* 建议搭配 Function、Switch、Catch、Status 节点组合使用以实现完整控制流。
+
+</script>

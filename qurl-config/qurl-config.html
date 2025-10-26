@@ -1,0 +1,161 @@
+<!-- qurl-config 节点定义 -->
+<script type="text/javascript">
+RED.nodes.registerType("qurl-config", {
+    category: "config",
+    defaults: {
+        name: { value: "" },
+        baseURL: { value: "", required: true },
+        caCertPath: { value: "" },
+        rejectUnauthorized: { value: true },
+        proxyEnabled: { value: false },
+        proxyProtocol: { value: "https" },
+        proxyHost: { value: "" },
+        proxyPort: { value: "" },
+        apiKeyKey: { value: "" },
+        apiKeyAddTo: { value: "headers" },
+    },
+    credentials: {
+        username: { value: "", type: "text" },
+        password: { value: "", type: "password" },
+        bearerToken: { value: "", type: "password" },
+        proxyUsername: { value: "", type: "text" },
+        proxyPassword: { value: "", type: "password" },
+        apiKeyValue: { value: "", type: "text" }
+    },
+    color: "#cbbbf7",
+    icon: "icons/node-red/white-globe.svg",
+    label: function () {
+        return this.name || this.baseURL;
+    },
+    oneditprepare: function () {
+        this.tabs = RED.tabs.create({
+            id: "tabs",
+            onchange: function (tab) {
+                $("#tabs-content").children().hide();
+                $("#" + tab.id).show();
+            },
+        });
+
+        this.tabs.addTab({ id: "tab-endpoint", label: "终端配置" });
+        this.tabs.addTab({ id: "tab-tls", label: "TLS 配置" });
+        this.tabs.addTab({ id: "tab-proxy", label: "代理配置" });
+        this.tabs.activateTab("tab-endpoint");
+    },
+});
+</script>
+
+<!-- CSS 样式 -->
+<style>
+.node-input-params-container-row .red-ui-editableList-container,
+.node-input-headers-container-row .red-ui-editableList-container {
+    height: auto !important;
+}
+</style>
+
+<!-- HTML 模板 -->
+<script type="text/html" data-template-name="qurl-config">
+<div class="form-row">
+    <label for="node-config-input-name"><i class="fa fa-tag"></i> 节点名称</label>
+    <input type="text" id="node-config-input-name" placeholder="可选，用于标识节点" />
+</div>
+
+<div class="form-row tabs-row">
+    <ul style="min-width: 600px; margin-bottom: 20px;" id="tabs"></ul>
+</div>
+
+<div id="tabs-content">
+    <!-- 终端配置 Tab -->
+    <div id="tab-endpoint" style="display:none">
+        <div class="form-row">
+            <label for="node-config-input-baseURL"><i class="fa fa-star"></i> 基础 URL</label>
+            <input type="text" id="node-config-input-baseURL" placeholder="https://example.com/api" />
+        </div>
+        <h4>HTTP 基础认证</h4>
+        <div class="form-row">
+            <label for="node-config-input-username">HTTP 用户名</label>
+            <input type="text" id="node-config-input-username" placeholder="可选" />
+        </div>
+        <div class="form-row">
+            <label for="node-config-input-password">HTTP 密码</label>
+            <input type="password" id="node-config-input-password" placeholder="可选" />
+        </div>
+        <h4>Bearer Token 认证</h4>
+        <div class="form-row">
+            <label for="node-config-input-bearerToken">Token</label>
+            <input type="password" id="node-config-input-bearerToken" placeholder="可选" />
+        </div>
+        <h4>API Key 认证</h4>
+        <div class="form-row">
+            <label for="node-config-input-apiKeyKey">Key 名称</label>
+            <input type="text" id="node-config-input-apiKeyKey" placeholder="可选" />
+        </div>
+        <div class="form-row">
+            <label for="node-config-input-apiKeyValue">Key 值</label>
+            <input type="text" id="node-config-input-apiKeyValue" placeholder="可选，可使用 flow/global 变量" />
+        </div>
+        <div class="form-row">
+            <label for="node-config-input-apiKeyAddTo">添加至</label>
+            <select id="node-config-input-apiKeyAddTo">
+                <option value="headers">HTTP 请求头</option>
+                <option value="params">URL 查询参数</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- TLS Tab -->
+    <div id="tab-tls" style="display:none">
+        <div class="form-row">
+            <label for="node-config-input-caCertPath" style="width: auto;"><i class="fa fa-user"></i> CA 证书路径</label>
+            <input type="text" id="node-config-input-caCertPath" placeholder="可选，自定义 CA 证书路径（PEM 文件）" />
+        </div>
+        <div class="form-row">
+            <input type="checkbox" id="node-config-input-rejectUnauthorized" style="display: inline-block; width: auto; vertical-align: top;" />
+            <label for="node-config-input-rejectUnauthorized" style="width: auto;">启用服务器证书验证</label>
+        </div>
+    </div>
+
+    <!-- 代理 Tab -->
+    <div id="tab-proxy" style="display:none">
+        <div class="form-row">
+            <input type="checkbox" id="node-config-input-proxyEnabled" style="display: inline-block; width: auto; vertical-align: top;" />
+            <label for="node-config-input-proxyEnabled" style="width: auto;">启用代理</label>
+        </div>
+        <div class="form-row">
+            <label for="node-config-input-proxyHost">代理主机名</label>
+            <input type="text" id="node-config-input-proxyHost" placeholder="可选" />
+        </div>
+        <div class="form-row">
+            <label for="node-config-input-proxyPort">代理端口</label>
+            <input type="number" id="node-config-input-proxyPort" placeholder="可选" />
+        </div>
+        <div class="form-row">
+            <label for="node-config-input-proxyUsername">代理用户名</label>
+            <input type="text" id="node-config-input-proxyUsername" placeholder="可选" />
+        </div>
+        <div class="form-row">
+            <label for="node-config-input-proxyPassword">代理密码</label>
+            <input type="password" id="node-config-input-proxyPassword" placeholder="可选" />
+        </div>
+    </div>
+</div>
+</script>
+
+<!-- 节点帮助文档（Markdown 中文优化版） -->
+<script type="text/markdown" data-help-name="qurl-config">
+## HTTP 请求节点配置（用于 Axios 请求）
+
+### 终端配置
+- **基础 URL**（字符串）：请求节点的 URL 前缀。
+- **HTTP 用户名**（字符串，可选）：用于 HTTP 基础认证。
+- **HTTP 密码**（字符串，可选）：用于 HTTP 基础认证。
+- **API Key - Key 名称**（字符串，可选）：用于 API Key 认证。
+- **API Key - Key 值**（字符串，可选）：可以使用 `{{flow.变量名}}` 或 `{{global.变量名}}`。
+- **API Key - 添加至**（字符串）：选择将 API Key 添加到 HTTP 请求头或 URL 查询参数。
+
+### TLS 配置
+- **CA 证书路径**（字符串，可选）：自定义 CA 证书（PEM 文件）路径。
+- **启用服务器证书验证**（布尔值，可选）：是否启用 TLS 证书验证。
+
+### 代理配置
+- **代理主机名、端口及可选认证信息**。
+</script>
